@@ -284,9 +284,9 @@ class FrappeClient(object):
 		return params
 
 	def post_process(self, response):
-		if response.status_code == 401:
+		if response.status_code in [401, 403]:
 			raise AuthError
-		elif response.status_code == 404:
+		elif response.status_code in [404, 417]:
 			if response.request.path_url.startswith("/api/resource/"):
 				path = response.request.path_url.split("/")
 				raise DocumentNotFound(path[3], path[4])
@@ -295,7 +295,7 @@ class FrappeClient(object):
 		elif response.status_code == 409:
 			raise DocumentConflictException
 		elif response.status_code != 200:
-			raise FrappeException("Unhandled Frappe exception.")
+			raise FrappeException("Unhandled Frappe exception `{0}`.".format(response.status_code))
 
 		try:
 			rjson = response.json()
