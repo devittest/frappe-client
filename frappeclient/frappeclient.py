@@ -1,8 +1,9 @@
 import requests
 import json
+import re
 from base64 import b64encode
 
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 try:
 	from StringIO import StringIO
@@ -25,14 +26,21 @@ class FrappeException(Exception):
 
 class NotUploadableException(FrappeException):
 	def __init__(self, doctype):
-		self.message = "The doctype `{0}` is not uploadable, so you can't download the template".format(doctype)
+		message = "The doctype `{0}` is not uploadable, so you can't download the template".format(doctype)
+		super().__init__(message)
+		self.message = message
 
-class DocumentNotFound(FrappeException):
-	def __init__(self, doctype="", name=""):
+class DocumentNotFoundException(FrappeException):
+	def __init__(self, doctype="", name="", field=""):
 		if doctype and name:
-			self.message = "Document `{0}` of doctype `{1}` not found.".format(name, doctype)
+			message = "Document `{0}` of doctype `{1}` not found.".format(name, doctype)
+		elif doctype and field:
+			message = "Field `{0}` of doctype `{1}` not found.".format(field, doctype)
 		else:
-			self.message = "Document not found."
+			message = "Document not found."
+
+		super().__init__(message)
+		self.message = message
 
 class DocumentConflictException(FrappeException):
 	pass
@@ -287,11 +295,22 @@ class FrappeClient(object):
 		if response.status_code in [401, 403]:
 			raise AuthError
 		elif response.status_code in [404, 417]:
-			if response.request.path_url.startswith("/api/resource/"):
-				path = response.request.path_url.split("/")
-				raise DocumentNotFound(path[3], path[4])
+			path_url = response.request.path_url
+			if path_url.startswith("/api/resource/"):
+				path = path_url.split("/")
+				raise DocumentNotFoundException(unquote(path[3]), unquote(path[4]))
 			else:
-				raise DocumentNotFound
+				doctype = ''
+				fieldname = ''
+				result = re.search(r'doctype=(.*?)&', path_url)
+				if result:
+					doctype = result[1].replace('+', ' ')
+
+				result = re.search(r'fieldname=(.*?)&', path_url)
+				if result:
+					fieldname = result[1]	
+
+				raise DocumentNotFoundException(doctype=unquote(doctype), field=unquote(fieldname))
 		elif response.status_code == 409:
 			raise DocumentConflictException
 		elif response.status_code != 200:
