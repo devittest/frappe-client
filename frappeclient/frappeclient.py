@@ -294,23 +294,22 @@ class FrappeClient(object):
 	def post_process(self, response):
 		if response.status_code in [401, 403]:
 			raise AuthError
-		elif response.status_code in [404, 417]:
+		elif response.status_code == 404:
 			path_url = response.request.path_url
 			if path_url.startswith("/api/resource/"):
 				path = path_url.split("/")
 				raise DocumentNotFoundException(unquote(path[3]), unquote(path[4]))
-			else:
-				doctype = ''
-				fieldname = ''
-				result = re.search(r'doctype=(.*?)&', path_url)
-				if result:
-					doctype = result[1].replace('+', ' ')
-
-				result = re.search(r'fieldname=(.*?)&', path_url)
-				if result:
-					fieldname = result[1]	
-
-				raise DocumentNotFoundException(doctype=unquote(doctype), field=unquote(fieldname))
+		elif response.status_code == 417:
+			path_url = response.request.path_url
+			doctype = ''
+			fieldname = ''
+			result = re.search(r'doctype=(.*?)&', path_url)
+			if result:
+				doctype = result[1].replace('+', ' ')
+			result = re.search(r'fieldname=(.*?)&', path_url)
+			if result:
+				fieldname = result[1]	
+			raise DocumentNotFoundException(doctype=unquote(doctype), field=unquote(fieldname))
 		elif response.status_code == 409:
 			raise DocumentConflictException
 		elif response.status_code != 200:
