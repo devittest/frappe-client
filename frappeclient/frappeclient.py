@@ -203,6 +203,13 @@ class FrappeClient(object):
 
 		return self.post_process(res)
 
+	def get_single(self, doctype):
+		'''Returns values of single doctype
+
+		:param doctype: DocType of the single document to be returned'''
+		return self.get_doc(doctype=doctype, name=doctype)
+
+
 	def rename_doc(self, doctype, old_name, new_name):
 		'''Rename remote document
 
