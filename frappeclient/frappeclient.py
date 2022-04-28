@@ -224,6 +224,14 @@ class FrappeClient(object):
 		}
 		return self.post_request(params)
 
+	def run_doc_method(self, doc, method):
+		params = {
+			'docs': doc,
+			'method': method
+		}
+		response = self.session.post(self.url + '/api/method/run_doc_method', json=params)
+		return self.post_process(response)
+
 	def get_pdf(self, doctype, name, print_format='Standard', letterhead=True):
 		params = {
 			'doctype': doctype,
