@@ -232,6 +232,19 @@ class FrappeClient(object):
 		response = self.session.post(self.url + '/api/method/run_doc_method', json=params)
 		return self.post_process(response)
 
+	def upload_file(self, file, is_private=0, folder='', doctype='', docname=''):
+		params = {
+			'is_private': is_private,
+			'folder': folder,
+			'doctype': doctype,
+			'docname': docname
+		}
+		files = {
+			'file': file
+		}
+		response = self.session.post(self.url + '/api/method/upload_file', json=params, files=files)
+		return self.post_process(response)
+
 	def get_pdf(self, doctype, name, print_format='Standard', letterhead=True):
 		params = {
 			'doctype': doctype,
