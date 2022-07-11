@@ -46,8 +46,18 @@ class DocumentConflictException(FrappeException):
 	pass
 
 class FrappeClient(object):
-	def __init__(self, url=None, username=None, password=None, api_key=None, api_secret=None, verify=True, print_on_error=True):
-		self.headers = dict(Accept='application/json')
+	def __init__(
+		self,
+		url=None,
+		username=None,
+		password=None,
+		api_key=None,
+		api_secret=None,
+		verify=True,
+		user_agent='Mozilla/5.0 (X11; Linux i686; rv:102.0) Gecko/20100101 Firefox/102.0'
+	):
+		# A browser is needed to make bot-detection of services like Cloudflare happy:
+		self.user_agent_header = {'User-Agent': user_agent}
 		self.session = requests.Session()
 		self.can_download = []
 		self.verify = verify
@@ -66,11 +76,12 @@ class FrappeClient(object):
 		self.logout()
 
 	def login(self, username, password):
+		self.session.headers.update(self.user_agent_header)
 		r = self.session.post(self.url, data={
 			'cmd': 'login',
 			'usr': username,
 			'pwd': password
-		}, verify=self.verify, headers=self.headers)
+		}, verify=self.verify)
 
 		if r.json().get('message') == "Logged In":
 			self.can_download = []
@@ -81,7 +92,7 @@ class FrappeClient(object):
 	def authenticate(self, api_key, api_secret):
 		token = b64encode('{}:{}'.format(api_key, api_secret).encode()).decode()
 		auth_header = {'Authorization': 'Basic {}'.format(token)}
-		self.session.headers.update(auth_header)
+		self.session.headers.update(dict(auth_header, **self.user_agent_header))
 
 	def logout(self):
 		self.session.get(self.url, params={
@@ -103,8 +114,7 @@ class FrappeClient(object):
 		if order_by:
 			params['order_by'] = order_by
 
-		res = self.session.get(self.url + "/api/resource/" + doctype, params=params,
-			verify=self.verify, headers=self.headers)
+		res = self.session.get(self.url + "/api/resource/" + doctype, params=params)
 		return self.post_process(res)
 
 	def insert(self, doc):
