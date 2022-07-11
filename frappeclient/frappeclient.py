@@ -46,8 +46,18 @@ class DocumentConflictException(FrappeException):
 	pass
 
 class FrappeClient(object):
-	def __init__(self, url=None, username=None, password=None, api_key=None, api_secret=None, verify=True, print_on_error=True):
-		self.headers = dict(Accept='application/json')
+	def __init__(
+		self,
+		url=None,
+		username=None,
+		password=None,
+		api_key=None,
+		api_secret=None,
+		verify=True,
+		user_agent='Mozilla/5.0 (X11; Linux i686; rv:102.0) Gecko/20100101 Firefox/102.0'
+	):
+		# A browser is needed to make bot-detection of services like Cloudflare happy:
+		self.headers = {'User-Agent': user_agent}
 		self.session = requests.Session()
 		self.can_download = []
 		self.verify = verify
